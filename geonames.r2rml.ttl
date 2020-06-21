@@ -1,0 +1,488 @@
+@prefix : <http://sws.geonames.org/> .
+@prefix rr: <http://www.w3.org/ns/r2rml#> .
+@prefix gn: <http://www.geonames.org/ontology#> .
+@prefix wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix sm: <tag:stardog:api:mapping:> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<#adm2-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+            rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentADM2
+        ];
+        rr:objectMap [
+            rr:template "http://sws.geonames.org/{admin2id}/" ;
+            rr:termType rr:IRI
+        ];
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                g.geonameid AS geonameid,
+                a.geonameid AS admin2id 
+            FROM
+                geoname AS g
+            INNER JOIN
+                geoname AS a
+            ON
+                g.country = a.country
+            AND
+                g.admin1 = a.admin1
+            AND
+                g.admin2 = a.admin2
+            AND
+                a.fcode = 'ADM2'
+        """
+    ] ;
+.
+
+<#wikipedia-article-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{\"geonameid\"}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:wikipediaArticle
+        ] ;
+        rr:objectMap [
+            rr:termType rr:IRI ;
+            rr:column "alternatename";
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                alternatename
+            FROM
+                alternatename
+            WHERE
+                isolanguage = 'link'
+        """
+    ] .
+
+<#parent-country-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:termType rr:IRI ;
+        rr:template "http://sws.geonames.org/{geonameid}/"
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentCountry
+        ] ;
+        rr:objectMap [
+            rr:template "http://sws.geonames.org/{geonameid0}/" ;
+            rr:termType rr:IRI
+        ] ;
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geoname.geonameid,
+                countryinfo.geonameid AS geonameid0
+            FROM
+                geoname
+            INNER JOIN
+                countryinfo
+            ON
+                geoname.country = countryinfo.fipscode
+        """
+    ] ;
+.
+
+<#parent-adm-4-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{\"geonameid\"}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentADM4
+        ] ;
+        rr:objectMap [
+            rr:template "http://sws.geonames.org/{\"geonameid0\"}/" ;
+            rr:termType rr:IRI
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                \"geoname\".\"geonameid\",
+                \"geoname0\".\"geonameid\" AS \"geonameid0\"
+            FROM
+                geoname
+            INNER JOIN
+                geoname AS \"geoname0\"
+            ON
+                \"geoname\".\"country\" = \"geoname0\".\"country\"
+            AND
+                \"geoname\".\"admin1\" = \"geoname0\".\"admin1\"
+            AND
+                \"geoname\".\"admin2\" = \"geoname0\".\"admin2\"
+            AND
+                \"geoname\".\"admin3\" = \"geoname0\".\"admin3\"
+            AND
+                \"geoname\".\"admin4\" = \"geoname0\".\"admin4\"
+            AND
+                \"geoname0\".\"fcode\" = 'ADM4'"""
+    ] ;
+.
+
+<#alternatename>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:alternateName
+        ];
+        rr:objectMap [
+            rr:column "alternatename" ;
+            rr:language "{isolanguage}";
+        ] ;
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                isolanguage,
+                alternatename
+            FROM
+                alternatename
+            WHERE
+                isolanguage SIMILAR TO '%%|%%-%%'
+            AND
+                ispreferredname IS NULL
+            AND
+                isshortname IS NULL
+        """
+    ] .
+
+
+<#official-name>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:officialName
+        ];
+        rr:objectMap [
+            rr:column "alternatename" ;
+            rr:language "{isolanguage}";
+        ] ;
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                isolanguage,
+                alternatename
+            FROM
+                alternatename
+            WHERE
+                LENGTH(isolanguage) = 2
+            AND
+                ispreferredname
+        """
+    ] .
+
+
+<#short-name-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:shortName
+        ];
+        rr:objectMap [
+            rr:column "alternatename" ;
+            rr:language "{isolanguage}";
+        ] ;
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                isolanguage,
+                alternatename
+            FROM
+                alternatename
+            WHERE
+                LENGTH(isolanguage) = 2
+            AND
+                isshortname
+        """
+    ] .
+
+<#postal-code-map>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+            rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:postalCode
+        ] ;
+        rr:objectMap [
+            rr:column "alternatename" ;
+            rr:datatype <http://www.w3.org/2001/XMLSchema#string>
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                alternatename
+            FROM
+                alternatename
+            WHERE
+                isolanguage = 'post'
+        """
+    ] ;
+.
+
+<tag:stardog:api:mapping:generated:mapping-247719726>
+    a rr:TriplesMap ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                geonameid,
+                name,
+                regexp_replace(lower(replace(asciiname, ' ', '-')), '[^a-z-]', '', 'g') AS locationname,
+                latitude,
+                longitude,
+                fclass,
+                country,
+                fclasscode,
+                CASE
+                    WHEN
+                        population = 0
+                    THEN
+                        NULL
+                    ELSE
+                        population
+                END AS population0
+            FROM
+                geoname
+            """
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:featureClass
+        ] ;
+        rr:objectMap [
+            rr:template "http://www.geonames.org/ontology#{\"fclass\"}" ;
+            rr:termType rr:IRI
+        ]
+    ] , [
+        rr:predicateMap [
+            rr:constant rdfs:isDefinedBy
+        ] ;
+        rr:objectMap [
+            rr:termType rr:IRI ;
+            rr:template "http://sws.geonames.org/{\"geonameid\"}/about.rdf"
+        ]
+    ] , [
+        rr:predicateMap [
+            rr:constant wgs84_pos:lat
+        ] ;
+            rr:objectMap [
+                rr:column "\"latitude\"" ;
+                rr:datatype <http://www.w3.org/2001/XMLSchema#double>
+            ]
+    ] , [
+        rr:predicateMap [
+            rr:constant gn:countryCode
+        ] ;
+            rr:objectMap [
+                rr:datatype <http://www.w3.org/2001/XMLSchema#string> ;
+                rr:column "\"country\""
+            ]
+    ] , [
+        rr:predicateMap [
+            rr:constant gn:nearbyFeatures
+        ] ;
+            rr:objectMap [
+                rr:template "http://sws.geonames.org/{\"geonameid\"}/nearby.rdf" ;
+                rr:termType rr:IRI
+            ]
+    ] ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{\"geonameid\"}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:objectMap [
+            rr:datatype <http://www.w3.org/2001/XMLSchema#double> ;
+            rr:column "\"longitude\""
+        ] ;
+        rr:predicateMap [
+            rr:constant wgs84_pos:long
+        ]
+    ] , [
+        rr:objectMap [
+            rr:template "http://www.geonames.org/ontology#{\"fclasscode\"}" ;
+            rr:termType rr:IRI
+        ] ;
+        rr:predicateMap [
+            rr:constant gn:featureCode
+        ]
+    ] , [
+        rr:predicateMap [
+            rr:constant <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+        ] ;
+        rr:objectMap [
+            rr:constant gn:Feature
+        ]
+    ] , [
+        rr:objectMap [
+            rr:column "\"name\"" ;
+            rr:datatype <http://www.w3.org/2001/XMLSchema#string>
+        ] ;
+        rr:predicateMap [
+            rr:constant gn:name
+        ]
+    ] , [
+        rr:objectMap [
+            rr:datatype <http://www.w3.org/2001/XMLSchema#integer> ;
+            rr:column "\"population0\""
+        ] ;
+        rr:predicateMap [
+            rr:constant gn:population
+        ]
+    ] , [
+        rr:objectMap [
+            rr:template "http://www.geonames.org/{geonameid}/{locationname}.html" ;
+            rr:termType rr:IRI
+        ] ;
+        rr:predicateMap [
+            rr:constant gn:locationMap
+        ]
+    ], [
+        rr:objectMap [
+            rr:template "http://www.geonames.org/{geonameid}/nearby.rdf" ;
+            rr:termType rr:IRI
+        ] ;
+        rr:predicateMap [
+            rr:constant gn:nearbyFeatures
+        ];
+    ] ;
+
+.
+
+<#mapping-adm1>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentADM1
+        ] ;
+        rr:objectMap [
+            rr:template "http://sws.geonames.org/{adm1id}/" ;
+            rr:termType rr:IRI
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                g.geonameid,
+                a.geonameid AS adm1id
+            FROM
+                geoname g
+            INNER JOIN
+                geoname a
+            ON
+                g.country = a.country
+            AND
+                g.admin1 = a.admin1
+            AND
+                a.fcode = 'ADM1'
+        """
+    ]
+.
+
+<#mapping-parent-feature>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentFeature
+        ] ;
+        rr:objectMap [
+            rr:template "http://sws.geonames.org/{parentId}/" ;
+            rr:termType rr:IRI
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                parentid,
+                childid as geonameid
+            FROM
+                hierarchy
+        """
+    ]
+.
+
+
+<#mapping-adm3>
+    a rr:TriplesMap ;
+    rr:subjectMap [
+        rr:template "http://sws.geonames.org/{geonameid}/" ;
+        rr:termType rr:IRI
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicateMap [
+            rr:constant gn:parentADM3
+        ] ;
+        rr:objectMap [
+            rr:termType rr:IRI ;
+            rr:template "http://sws.geonames.org/{adm3id}/"
+        ]
+    ] ;
+    rr:logicalTable [
+        rr:sqlQuery """
+            SELECT
+                g.geonameid,
+                a.geonameid AS adm3id
+            FROM
+                geoname g
+            INNER JOIN
+                geoname a
+            ON
+                g.country = a.country
+            AND
+                g.admin1 = a.admin1
+            AND
+                g.admin2 = a.admin2
+            AND
+                g.admin3 = a.admin3
+            AND
+                a.fcode = 'ADM3'
+        """
+    ]
+.

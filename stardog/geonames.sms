@@ -1,0 +1,114 @@
+@prefix gn: <http://www.geonames.org/ontology#>  .
+@prefix wgs84_pos: <http://www.w3.org/2003/01/geo/wgs84_pos#>  .
+@prefix sm: <tag:stardog:api:mapping:>  .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>  .
+@prefix : <http://sws.geonames.org/>  .
+@base <http://sws.geonames.org/>  .
+
+<{geonameid}/>
+    a gn:Feature;
+    rdfs:isDefinedBy <http://sws.geonames.org/{geonameid}/about.rdf>;
+    gn:nearbyFeatures <http://sws.geonames.org/{geonameid}/nearby.rdf>;
+    gn:name "{\"name\"}";
+    gn:featureClass gn:{"fclass"};
+    gn:featureCode gn:{"fclasscode"};
+    wgs84_pos:lat "{\"latitude\"}";
+    wgs84_pos:long "{\"longitude\"}";
+    gn:countryCode "{\"country\"}";
+    gn:population "{\"population\"}";
+    sm:map [
+        sm:query """
+            SELECT geonameid, fclass, fclasscode, latitude, longitude, country, name, NULLIF(population, 0) AS population FROM geoname
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:alternateName "{\"alternatename\"}"@{isolanguage};
+    sm:map [
+        sm:query """
+            SELECT geonameid, isolanguage, alternatename FROM alternatename WHERE LENGTH(isolanguage) = 2
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:wikipediaArticle <{alternatename}>;
+    sm:map [
+        sm:query """
+            SELECT geonameid, alternatename FROM alternatename WHERE isolanguage = 'link'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:postalCode "{\"alternatename\"}";
+    sm:map [
+        sm:query """
+            SELECT geonameid, isolanguage, alternatename FROM alternatename WHERE isolanguage = 'post' 
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentCountry <{parentCountry}/>;
+    sm:map [
+        sm:query """
+            SELECT geoname.geonameid, countryinfo.geonameid AS parentCountry FROM geoname JOIN countryinfo ON geoname.country = countryinfo.fipscode
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentADM1 <{parentADM1}/>;
+    sm:map [
+        sm:query """
+            SELECT g.geonameid, a.geonameid AS parentADM1 FROM geoname g JOIN geoname a ON g.country=a.country AND g.admin1=a.admin1 AND a.fcode='ADM1'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentADM2 <{parentADM2}/>;
+    sm:map [
+        sm:query """
+            SELECT g.geonameid, a.geonameid AS parentADM2 FROM geoname g JOIN geoname a ON g.country=a.country AND g.admin1=a.admin1 AND g.admin2=a.admin2 AND a.fcode='ADM2' AND g.admin2 <> '00'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentADM3 <{parentADM3}/>;
+    sm:map [
+        sm:query """
+            SELECT g.geonameid, a.geonameid AS parentADM3 FROM geoname g JOIN geoname a ON g.country=a.country AND g.admin1=a.admin1 AND g.admin2=a.admin2 AND g.admin3=a.admin3 AND a.fcode='ADM3'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentADM4 <{parentADM4}/>;
+    sm:map [
+        sm:query """
+            SELECT g.geonameid, a.geonameid AS parentADM4 FROM geoname g JOIN geoname a ON g.country=a.country AND g.admin1=a.admin1 AND g.admin2=a.admin2 AND g.admin3=a.admin3 AND g.admin4=a.admin4 AND a.fcode='ADM4'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentADM5 <{parentADM5}/>;
+    sm:map [
+        sm:query """
+		SELECT g.geonameid, a.geonameid AS parentADM5 FROM (select g1.geonameid, g1.country, g1.admin1, g1.admin2, g1.admin3, g1.admin4, ac51.admcode5 as admin5 from geoname g1 left outer join admincode5 ac51 on g1.geonameid=ac51.geonameid) g JOIN (select g1.geonameid, g1.country, g1.admin1, g1.admin2, g1.admin3, g1.admin4, g1.fcode, ac51.admcode5 as admin5 from geoname g1 left outer join admincode5 ac51 on g1.geonameid=ac51.geonameid) a ON g.country=a.country AND g.admin1=a.admin1 AND g.admin2=a.admin2 AND g.admin3=a.admin3 AND g.admin4=a.admin4 AND g.admin5=a.admin5 AND a.fcode='ADM5'
+        """;
+    ]
+.
+
+<{geonameid}/>
+    gn:parentFeature <{parentid}/>;
+    sm:map [
+        sm:query """
+		SELECT parentid, childid AS geonameid FROM heirarchy;
+        """;
+    ]
+.
