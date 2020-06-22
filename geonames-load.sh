@@ -50,23 +50,23 @@ function main() {
 	SED="/bin/sed"
 	OGR2OGR="/bin/ogr2ogr"
 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/allCountries.zip -O $DOWNLOAD_DIR/geonames-allCountries.zip 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/alternateNamesV2.zip 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/countryInfo.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/admin1CodesASCII.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/admin2Codes.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/timeZones.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/userTags.zip 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/hierarchy.zip 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/adminCode5.zip 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_en.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_bg.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_nb.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_nn.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_no.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_ru.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/featureCodes_sv.txt 
-	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/dump/shapes_simplified_low.json.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/allCountries.zip -O $DOWNLOAD_DIR/geonames-allCountries.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/alternateNamesV2.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/countryInfo.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/admin1CodesASCII.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/admin2Codes.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/timeZones.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/userTags.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/hierarchy.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/adminCode5.zip 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_en.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_bg.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_nb.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_nn.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_no.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_ru.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/featureCodes_sv.txt 
+	$WGET -c -P $DOWNLOAD_DIR https://download.geonames.org/export/dump/shapes_simplified_low.json.zip 
 	$WGET -c -P $DOWNLOAD_DIR http://download.geonames.org/export/zip/allCountries.zip -O $DOWNLOAD_DIR/postalcodes-allCountries.zip 
 
 	$UNZIP $DOWNLOAD_DIR/geonames-allCountries.zip -d $WORK_DIR
@@ -101,8 +101,6 @@ function main() {
 	$SED -i -e 's/\t/\tru\t/' $WORK_DIR/featureCodes_ru.txt
 	$SED -i -e 's/\t/\tsv\t/' $WORK_DIR/featureCodes_sv.txt
 
-	cp $BASE_DIR/geonames-continents.txt $WORK_DIR/
-
 	# Make the tables
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -f "$BASE_DIR/geonames-schema.sql"
 
@@ -119,11 +117,14 @@ function main() {
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX geoname_geonameid_idx ON geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX geoname_name_idx ON geoname(name);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX geoname_fclass_idx ON geoname(fclass);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX geoname_country_idx ON geoname(country);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD PRIMARY KEY (geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM FULL geoname;"
 
 	# alternateNames table
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy alternatename from $WORK_DIR/alternateNamesV2.txt null as '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE alternatename ADD PRIMARY KEY (alternatenameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE alternatename ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX alternatename_geonameid_idx ON alternatename(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE alternatename;"
 
@@ -134,6 +135,7 @@ function main() {
 	# countryinfo
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy countryinfo FROM $WORK_DIR/countryInfo.txt NULL AS '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE countryinfo ADD PRIMARY KEY (geonameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE countryinfo ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE countryinfo;"
 
 	# timezones
@@ -166,21 +168,26 @@ function main() {
 	# usertags
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy usertags FROM $WORK_DIR/userTags.txt NULL AS '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX usertags_geonameid_idx ON usertags(geonameid);"
+	#$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE usertags ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE usertags;"
 
 	# hierarchy
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy hierarchy from $WORK_DIR/hierarchy.txt null as '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX hierarchy_idx ON hierarchy(parentid, childid);"
+	#$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE hierarchy ADD FOREIGN KEY (parentid) REFERENCES geoname(geonameid);"
+	#$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE hierarchy ADD FOREIGN KEY (childid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE hierarchy;"
 
 	# admincode5
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy admincode5 from $WORK_DIR/adminCode5.txt null as '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE admincode5 ADD PRIMARY KEY (geonameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE admincode5 ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE admincode5;"
 
 	# usertags
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy usertags FROM $WORK_DIR/userTags.txt NULL AS '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "CREATE INDEX usertags_idx ON usertags(geonameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE usertags ADD FOREIGN KEY (parentid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE usertags;"
 
 	# postalcodes
@@ -189,22 +196,20 @@ function main() {
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "vacuum analyze postalcodes;"
 
 	# continent
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('AF', 'Africa', 6255146);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('AS', 'Asia', 6255147);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('EU', 'Europe', 6255148);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('NA', 'North America', 6255149);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('OC', 'Oceania', 6255150);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('SA', 'South America', 6255151);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentCodes VALUES ('AN', 'Antarctica', 6255152);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('AF', 'Africa', 6255146);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('AS', 'Asia', 6255147);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('EU', 'Europe', 6255148);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('NA', 'North America', 6255149);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('OC', 'Oceania', 6255150);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('SA', 'South America', 6255151);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "INSERT INTO continentinfo VALUES ('AN', 'Antarctica', 6255152);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE continentinfo ADD PRIMARY KEY (geonameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE continentinfo ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "vacuum analyze continentinfo;"
 
 	# shapes
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "DROP TABLE IF EXISTS shapessimplifiedlow";
 	$OGR2OGR -f "PostgreSQL" PG:"dbname=$GEONAMESDB user=$DBUSER" $WORK_DIR/shapes_simplified_low.json -nln shapessimplifiedlow -overwrite
-
-
-	##TODO add foreign keys
 }
 
 main $@

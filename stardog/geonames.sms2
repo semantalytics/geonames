@@ -5,37 +5,168 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix : <http://sws.geonames.org/> 
 
 MAPPING FROM SQL {
-            SELECT
-		geonameid,
-		fclass,
-		fclasscode,
-		latitude,
-		longitude,
-		country,
-		name,
-		NULLIF(population, 0) AS population
+	SELECT
+		g.geonameid,
+		g.fclass,
+		REPLACE(REPLACE(REPLACE(REPLACE(LOWER(g.asciiname), ' ', '-'), '.', ''), '(', ''), ')', '') AS asciiname,
+		g.fclasscode,
+		g.latitude,
+		g.longitude,
+		g.country,
+		g.name,
+		NULLIF(g.population, 0) AS population,
+		a1.geonameid AS parentADM1,
+		a2.geonameid AS parentADM2,
+		a3.geonameid AS parentADM3,
+		a4.geonameid AS parentADM4,
+		a5.geonameid AS parentADM5,
+		ci.geonameid AS parentCountry,
+		COALESCE(a5.geonameid, a4.geonameid, a3.geonameid, a2.geonameid, a1.geonameid) AS parentFeature
 	FROM
-		geoname
-
+		(SELECT
+			g.geonameid,
+			g.asciiname,
+			g.country,
+			g.admin1,
+			g.admin2,
+			g.admin3,
+			g.admin4,
+			g.fclass,
+			g.fclasscode,
+			g.latitude,
+			g.longitude,
+			g.name,
+			g.population,
+			a.admcode5 as admin5
+		 FROM
+			geoname g
+		 LEFT OUTER JOIN
+			admincode5 a
+		 ON
+			g.geonameid=a.geonameid) g
+	LEFT OUTER JOIN
+		(SELECT
+			g.geonameid,
+			g.admin1,
+			g.admin2,
+			g.admin3,
+			g.admin4,
+			a.admcode5 as admin5,
+			g.country,
+			g.fcode
+		 FROM
+			geoname g
+		 LEFT OUTER JOIN
+			admincode5 a
+		 ON
+			g.geonameid=a.geonameid) a5
+	ON
+		g.country=a5.country
+	AND
+		g.admin1=a5.admin1
+	AND
+		g.admin2=a5.admin2
+	AND
+		g.admin3=a5.admin3
+	AND
+		g.admin4=a5.admin4
+	AND
+		g.admin5=a5.admin5
+	AND
+		a5.fcode='ADM5'
+	AND
+		g.geonameid <> a5.geonameid
+	LEFT JOIN
+		geoname a4
+	ON
+		g.country=a4.country
+	AND
+		g.admin1=a4.admin1
+	AND
+		g.admin2=a4.admin2
+	AND
+		g.admin3=a4.admin3
+	AND
+		g.admin4=a4.admin4
+	AND
+		a4.fcode='ADM4'
+	AND
+		g.geonameid <> a4.geonameid
+	LEFT JOIN
+		geoname a3
+	ON
+		g.country = a3.country
+	AND
+		g.admin1 = a3.admin1
+	AND
+		g.admin2 = a3.admin2
+	AND	
+		g.admin3 = a3.admin3
+	AND
+		a3.fcode = 'ADM3'
+	AND
+		g.geonameid <> a3.geonameid
+	LEFT JOIN
+		geoname a2
+	ON	
+		g.country = a2.country
+	AND
+		g.admin1 = a2.admin1
+	AND
+		g.admin2 = a2.admin2
+	AND
+		a2.fcode = 'ADM2'
+	AND
+		g.geonameid <> a2.geonameid
+	LEFT JOIN
+		geoname a1
+	ON
+		g.country = a1.country
+	AND	
+		g.admin1 = a1.admin1
+	AND
+		a1.fcode='ADM1'
+	AND
+		g.geonameid <> a1.geonameid
+	LEFT JOIN
+		countryinfo ci
+	ON
+		g.country = ci.fipscode
 } TO {
 	?geonameid
-	    a gn:Feature;
-	    rdfs:isDefinedBy ?about;
-	    gn:nearbyFeatures ?nearby;
-	    gn:name ?name;
-	    gn:featureClass ?featureClass;
-	    gn:featureCode ?featureClassCode;
-	    wgs84_pos:lat ?latitude_float;
-	    wgs84_pos:long ?longitude_float;
-	    gn:countryCode ?country;
-	    gn:population ?population_int;
+		a gn:Feature;
+		gn:locationMap ?locationMap;
+		rdfs:isDefinedBy ?about;
+		gn:nearbyFeatures ?nearby;
+		gn:name ?name;
+		gn:featureClass ?featureClass;
+		gn:featureCode ?featureClassCode;
+		wgs84_pos:lat ?latitude_float;
+		wgs84_pos:long ?longitude_float;
+		gn:countryCode ?country;
+		gn:population ?population_int;
+		gn:parentCountry ?parentCountryIri;
+		gn:parentFeature ?parentFeatureIri;
+		gn:parentADM1 ?parentAdm1Iri;
+		gn:parentADM2 ?parentAdm2Iri;
+		gn:parentADM3 ?parentAdm3Iri;
+		gn:parentADM4 ?parentAdm4Iri;
+		gn:parentADM5 ?parentAdm5Iri;
 	.
 } WHERE {
 	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
 	BIND(template("http://sws.geonames.org/{geonameid}/about.rdf") AS ?about)
 	BIND(template("http://sws.geonames.org/{geonameid}/nearby.rdf") AS ?nearby)
+	BIND(template("https://www.geonames.org/{geonameid}/{asciiname}.html") AS ?locationMap)
 	BIND(template("http://www.geonames.org/ontology#{fclass}") AS ?featureClass)
 	BIND(template("http://www.geonames.org/ontology#{fclasscode}") AS ?featureClassCode)
+	BIND(template("http://sws.geonames.org/{parentCountry}/") AS ?parentCountryIri)
+	BIND(template("http://sws.geonames.org/{parentADM1}/") AS ?parentAdm1Iri)
+	BIND(template("http://sws.geonames.org/{parentADM2}/") AS ?parentAdm2Iri)
+	BIND(template("http://sws.geonames.org/{parentADM3}/") AS ?parentAdm3Iri)
+	BIND(template("http://sws.geonames.org/{parentADM4}/") AS ?parentAdm4Iri)
+	BIND(template("http://sws.geonames.org/{parentADM5}/") AS ?parentAdm5Iri)
+	BIND(template("http://sws.geonames.org/{parentFeature}/") AS ?parentFeatureIri)
 	BIND(STRDT(?population, xsd:int) AS ?population_int)
 	BIND(STRDT(?latitude, xsd:float) AS ?latitude_float)
 	BIND(STRDT(?longitude, xsd:float) AS ?longitude_float)
@@ -58,7 +189,11 @@ MAPPING FROM SQL {
 	WHERE
 		isolanguage IS NOT NULL
 	AND
+		LENGTH(isolanguage) <> 4
+	AND
 		isshortname = true
+	AND
+		ispreferredname IS NULL
 } TO {
 	?geonameid
 		gn:shortName ?alternatename_lang
@@ -79,6 +214,10 @@ MAPPING FROM SQL {
 		alternatename
 	WHERE
 		isolanguage IS NULL
+	AND
+		isshortname = true
+	AND
+		ispreferredname IS NULL
 } TO {
 	?geonameid
 		gn:shortName ?alternatename
@@ -97,11 +236,62 @@ MAPPING FROM SQL {
 	FROM
 		alternatename
 	WHERE
+		isolanguage IS NULL
+	AND
+		ispreferredname = true
+} TO {
+	?geonameid
+		gn:officialName ?alternatename
+	.
+} WHERE {
+	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
+}
+
+;
+
+MAPPING FROM SQL {
+	SELECT
+		geonameid,
+		isolanguage,
+		alternatename
+	FROM
+		alternatename
+	WHERE
+		isolanguage IS NOT NULL
+	AND
+		LENGTH(isolanguage) <> 4
+	AND
+		ispreferredname = true
+} TO {
+	?geonameid
+		gn:officialName ?alternatename_lang
+	.
+} WHERE {
+	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
+	BIND(STRLANG(?alternatename, ?isolanguage) AS ?alternatename_lang)
+}
+
+;
+
+MAPPING FROM SQL {
+	SELECT
+		geonameid,
+		isolanguage,
+		alternatename
+	FROM
+		alternatename
+	WHERE
+		isolanguage IS NOT NULL
+	AND
 		LENGTH(isolanguage) <> 4
 	AND
 		isshortname IS NULL
 	AND
-		isolanguage IS NOT NULL
+		ispreferredname IS NULL
+	AND
+		iscolloquial IS NULL
+	AND
+		ishistoric IS NULL
 } TO {
 	?geonameid
 		gn:alternateName ?alternatename_lang
@@ -124,6 +314,12 @@ MAPPING FROM SQL {
 		isolanguage IS NULL
 	AND
 		isshortname IS NULL
+	AND
+		ispreferredname IS NULL
+	AND
+		iscolloquial IS NULL
+	AND
+		ishistoric IS NULL
 } TO {
 	?geonameid
 		gn:alternateName ?alternatename
@@ -133,27 +329,8 @@ MAPPING FROM SQL {
 }
 
 ;
-
-MAPPING FROM SQL {
-	SELECT
-		geonameid,
-		isolanguage,
-		alternatename
-	FROM
-		alternatename
-	WHERE
-		LENGTH(isolanguage) = 0
-} TO {
-	?geonameid
-		gn:alternateName ?alternatename
-	.
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-}
 
 #This isn't quite right alternatename table is messed up
-
-;
 
 MAPPING FROM SQL {
 	SELECT
@@ -163,6 +340,8 @@ MAPPING FROM SQL {
 		alternatename
 	WHERE
 		isolanguage = 'link'
+	AND
+		alternatename LIKE 'https://%.wikipedia.org/%'
 } TO {
 	?geonameid
 	    gn:wikipediaArticle ?wikipediaArticle
@@ -195,202 +374,13 @@ MAPPING FROM SQL {
 
 MAPPING FROM SQL {
 	SELECT
-		geoname.geonameid,
-		countryinfo.geonameid AS parentCountry
-	FROM
-		geoname
-	JOIN
-		countryinfo
-	ON
-		geoname.country = countryinfo.fipscode
-} TO {
-	?geonameid
-		gn:parentCountry ?parentCountryIri;
-	.
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentCountry}/") AS ?parentCountryIri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
-		g.geonameid,
-		a.geonameid AS parentADM1
-	FROM
-		geoname g
-	JOIN
-		geoname a
-	ON
-		g.country = a.country
-	AND	
-		g.admin1 = a.admin1
-	AND
-		a.fcode='ADM1'
-} TO {
-	?geonameid
-		gn:parentADM1 ?parentAdm1Iri
-	.
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentADM1}/") AS ?parentAdm1Iri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
-		g.geonameid,
-		a.geonameid AS parentADM2
-	FROM
-		geoname g
-	JOIN
-		geoname a
-	ON	
-		g.country = a.country
-	AND
-		g.admin1 = a.admin1
-	AND
-		g.admin2 = a.admin2
-	AND
-		a.fcode = 'ADM2'
-} TO {
-	?geonameid
-		gn:parentADM2 ?parentAdm2Iri;
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentADM2}/") AS ?parentAdm2Iri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
-		g.geonameid,	
-		a.geonameid AS parentADM3
-	FROM	
-		geoname g
-	JOIN
-		geoname a
-	ON
-		g.country = a.country
-	AND
-		g.admin1 = a.admin1
-	AND
-		g.admin2 = a.admin2
-	AND	
-		g.admin3 = a.admin3
-	AND
-		a.fcode = 'ADM3'
-} TO {
-	?geonameid
-		gn:parentADM3 ?parentAdm3Iri;
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentADM3}/") AS ?parentAdm3Iri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
-		g.geonameid,	
-		a.geonameid AS parentADM4
-	FROM
-		geoname g
-	JOIN
-		geoname a
-	ON
-		g.country=a.country
-	AND
-		g.admin1=a.admin1
-	AND
-		g.admin2=a.admin2
-	AND
-		g.admin3=a.admin3
-	AND
-		g.admin4=a.admin4
-	AND
-		a.fcode='ADM4'
-} TO {
-	?geonameid
-		gn:parentADM4 ?parentAdm4Iri;
-	.
-
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentADM4}/") AS ?parentAdm4Iri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
-		g.geonameid,
-		a.geonameid AS parentADM5
-	FROM
-		(SELECT
-			g1.geonameid,
-			g1.country,
-			g1.admin1,
-			g1.admin2,
-			g1.admin3,
-			g1.admin4,
-			ac51.admcode5 as admin5
-		 FROM
-			geoname g1
-		 LEFT OUTER JOIN
-			admincode5 ac51
-		 ON
-			g1.geonameid=ac51.geonameid) g
-	JOIN
-		(SELECT
-			g1.geonameid,
-			g1.country,
-			g1.admin1,	
-			g1.admin2,
-			g1.admin3,
-			g1.admin4,
-			g1.fcode,
-			ac51.admcode5 as admin5
-		 FROM
-			geoname g1
-		 LEFT OUTER JOIN
-			admincode5 ac51
-		 ON
-			g1.geonameid=ac51.geonameid) a
-	ON
-		g.country=a.country
-	AND
-		g.admin1=a.admin1
-	AND
-		g.admin2=a.admin2
-	AND
-		g.admin3=a.admin3
-	AND
-		g.admin4=a.admin4
-	AND
-		g.admin5=a.admin5
-	AND
-		a.fcode='ADM5'
-} TO {
-	?geonameid
-		gn:parentADM5 ?parentAdm5Iri;
-} WHERE {
-	BIND(template("http://sws.geonames.org/{geonameid}/") AS ?geonameid)
-	BIND(template("http://sws.geonames.org/{parentADM5}/") AS ?parentAdm5Iri)
-}
-
-;
-
-MAPPING FROM SQL {
-	SELECT
 		parentid,
 		childid AS geonameid
 	FROM
 		hierarchy
 	WHERE
+		type <> 'ADM'
+	OR
 		type IS NULL
 } TO {
 	?geonameid
