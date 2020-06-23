@@ -13,10 +13,9 @@ function main() {
 
 	mkdir downloads
 	DOWNLOAD_DIR=downloads
+	mkdir $DOWNLOAD_DIR
 
 	WORK_DIR=`mktemp -d -p "$DIR"`
-	#mkdir data
-	#WORK_DIR=data
 
 	# check if tmp dir was created
 	if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
