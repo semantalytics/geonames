@@ -9,8 +9,6 @@ sudo systemctl start postgresql
 sudo systemctl enable postgresql
 ```
 
-(include reference howto?)
-
 ## install postgis
 
 ```bash
@@ -19,33 +17,18 @@ sudo yum -y install postgis postgis-utils
 initdb
 
 createdb geonames
-
-TODO create user, enable gis extension
-
-```
-
-(include reference howto?)
-
-## install stardog
-
-```bash
-wget https://downloads.stardog.com/stardog/stardog-latest.zip
-unzip stardog-latest.zip
-cd stardog-*
-./bin/stardog-admin server start
 ```
 
 ## Import Geonames into Postgres
 
 ```bash
-cd postgres
-./load.sh
+./postgres/load.sh
+```
 
 ## import data and virtual-graph into Stardog
 
 ```bash
-cd ../stardog
-./load.sh
+./stardog/load.sh
 ```
 
 ## dump data
@@ -55,8 +38,7 @@ cd ../stardog
 ## Convert Geonames RDF dump to nt
 
 ```bash
-cd ../rdf-dump
-./rdf-dump-to-nt.sh
+./rdf-dump/rdf-dump-to-nt.sh
 ```
 
 ## Next steps
@@ -71,7 +53,4 @@ cd ../rdf-dump
 - https://github.com/dbpedia/links
 
 ## todo
-- docker compose setup
-- add not null constraints
-- map country as top level admin
-- skip admin with 00
+- skip admin2 with 00??
