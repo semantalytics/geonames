@@ -16,6 +16,12 @@ sudo systemctl enable postgresql
 ```bash
 sudo yum -y install epel-release
 sudo yum -y install postgis postgis-utils
+initdb
+
+createdb geonames
+
+TODO create user, enable gis extension
+
 ```
 
 (include reference howto?)
