@@ -104,9 +104,16 @@ function main() {
 	# Make the tables
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -f "$BASE_DIR/geonames-schema.sql"
 
+	# timezones
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy timezones FROM $WORK_DIR/timeZones.txt NULL '' delimiter E'\t' csv header;"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE timezones ADD PRIMARY KEY (timezoneid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "create index timezones_countrycode_idx on timezones(countrycode);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "vacuum analyze timezones;"
+
 	# Geoname table
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy geoname FROM $WORK_DIR/geonames-allCountries.txt NULL AS '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD PRIMARY KEY (geonameid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE GEONAME ADD FOREIGN KEY (timezone) REFERENCES timezones(timezoneid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD COLUMN fclasscode varchar(12);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "UPDATE geoname SET fclasscode = concat(fclass, '.', fcode);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "SELECT AddGeometryColumn( 'geoname', 'the_geom', 4326, 'POINT', 2);"
@@ -138,11 +145,6 @@ function main() {
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE countryinfo ADD FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "VACUUM ANALYZE countryinfo;"
 
-	# timezones
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy timezones FROM $WORK_DIR/timeZones.txt NULL '' delimiter E'\t' csv header;"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE timezones ADD PRIMARY KEY (timezoneid);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "create index timezones_countrycode_idx on timezones(countrycode);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "vacuum analyze timezones;"
 
 	# admin1codesascii
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy admin1codesascii FROM $WORK_DIR/admin1CodesASCII.txt NULL AS '';"
