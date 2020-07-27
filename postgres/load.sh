@@ -112,7 +112,7 @@ function main() {
 	# Geoname table
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "\copy geoname FROM $WORK_DIR/geonames-allCountries.txt NULL AS '';"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD PRIMARY KEY (geonameid);"
-	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE GEONAME ADD FOREIGN KEY (timezone) REFERENCES timezones(timezoneid);"
+	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD FOREIGN KEY (timezone) REFERENCES timezones(timezoneid);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "ALTER TABLE geoname ADD COLUMN fclasscode varchar(12);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "UPDATE geoname SET fclasscode = concat(fclass, '.', fcode);"
 	$PSQL --host=$DBHOST --port=$DBPORT --username=$DBUSER --dbname=$GEONAMESDB -c "SELECT AddGeometryColumn( 'geoname', 'the_geom', 4326, 'POINT', 2);"
